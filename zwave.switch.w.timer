@@ -5,7 +5,6 @@
  * your engine heater cable. All rules are set in webcore though. This just provides an easy way of setting
  * a departure time.
  */
-
 metadata {
 	definition (name: "Z-Wave Metering Switch With Timer", namespace: "arnqvist", author: "Petter Arnqvist Eriksson", ocfDeviceType: "oic.d.switch") {
 		capability "Energy Meter"
@@ -19,7 +18,7 @@ metadata {
 		capability "Light"
 		capability "Health Check"
         capability "Image Capture"
-
+       
         attribute "departure", "string"
 
 		command "reset"
@@ -27,7 +26,7 @@ metadata {
 		fingerprint inClusters: "0x25,0x32"
 		fingerprint mfr:"0086", prod:"0003", model:"0012", deviceJoinName: "Aeon Labs Micro Smart Switch"
 	}
-
+    
     preferences {
     input name: "timer", type: "time", title: "Tid för avresa:", description: "Ange tid", required: false
 	}
@@ -64,7 +63,7 @@ metadata {
 		valueTile("energy", "device.energy") {
 			state "default", label:'${currentValue} kWh'
 		}
-        valueTile("image", "device.image") {
+        valueTile("departure", "device.departure") {
 			state "default", label:'Avresa: ${currentValue}'
 		}
 		standardTile("reset", "device.energy", inactiveLabel: false, decoration: "flat") {
@@ -74,8 +73,8 @@ metadata {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
 
-		main(["switch","power","energy","image"])
-		details(["switch","power","energy","image","refresh","reset"])
+		main(["switch","power","energy","departure"])
+		details(["switch","power","energy","departure","refresh","reset"])
 	}
 }
 
@@ -92,13 +91,18 @@ def updated() {
 			response(zwave.manufacturerSpecificV2.manufacturerSpecificGet().format())
 		}
 	} catch (e) { log.debug e }
+    
+       def time = timer.substring(11,16)
+        def tz = location.timeZone
+		def schedTime = timeToday(timer, tz)
+		//*def time = schedTime.format("H",tz)
+		//def min = schedTime.format("m",tz
+       // def time = schedTime.format('yyyy-MM-dd HH:mm:ss', tz).toString()
 
-        def time = timer.substring(11,16)
-
-    if(time) {
-    		log.debug "Departure time set to: $time"
-    		sendEvent("name":"image", "value":time)
-
+    if(timer) {
+    		log.debug "Departure time set to: $timer"
+    		sendEvent("name":"image", "value":timer)
+            sendEvent("name":"departure", "value":time)
     } else {
     		log.debug "No departure time is set"
     		}
@@ -236,7 +240,7 @@ def refresh() {
 		zwave.meterV2.meterGet(scale: 0).format(),
 		zwave.meterV2.meterGet(scale: 2).format()
 	])
-
+    
 }
 
 def configure() {
