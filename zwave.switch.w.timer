@@ -92,16 +92,15 @@ def updated() {
 		}
 	} catch (e) { log.debug e }
     
-       def time = timer.substring(11,16)
+	def time = timer.substring(11,16)
         def tz = location.timeZone
-		def schedTime = timeToday(timer, tz)
-		//*def time = schedTime.format("H",tz)
-		//def min = schedTime.format("m",tz
+	def schedTime = timeToday(timer, tz)
+
        // def time = schedTime.format('yyyy-MM-dd HH:mm:ss', tz).toString()
 
     if(timer) {
     		log.debug "Departure time set to: $timer"
-    		sendEvent("name":"image", "value":timer)
+    		sendEvent("name":"image", "value":schedTime)
             sendEvent("name":"departure", "value":time)
     } else {
     		log.debug "No departure time is set"
