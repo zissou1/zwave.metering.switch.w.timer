@@ -17,9 +17,9 @@ metadata {
 		capability "Sensor"
 		capability "Light"
 		capability "Health Check"
-        capability "Image Capture"
        
-        attribute "departure", "string"
+        	attribute "dep_time_formatted", "string"
+        	attribute "departure_time", "string"
 
 		command "reset"
 
@@ -63,7 +63,7 @@ metadata {
 		valueTile("energy", "device.energy") {
 			state "default", label:'${currentValue} kWh'
 		}
-        valueTile("departure", "device.departure") {
+        valueTile("dep_time_formatted", "device.dep_time_formatted") {
 			state "default", label:'Avresa: ${currentValue}'
 		}
 		standardTile("reset", "device.energy", inactiveLabel: false, decoration: "flat") {
@@ -73,8 +73,8 @@ metadata {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
 
-		main(["switch","power","energy","departure"])
-		details(["switch","power","energy","departure","refresh","reset"])
+		main(["switch","power","energy","dep_time_formatted"])
+		details(["switch","power","energy","dep_time_formatted","refresh","reset"])
 	}
 }
 
@@ -92,16 +92,17 @@ def updated() {
 		}
 	} catch (e) { log.debug e }
     
-	def time = timer.substring(11,16)
+       def time = timer.substring(11,16)
         def tz = location.timeZone
-	def schedTime = timeToday(timer, tz)
-
+		def schedTime = timeToday(timer, tz)
+		//def time = schedTime.format("H",tz)
+		//def min = schedTime.format("m",tz
        // def time = schedTime.format('yyyy-MM-dd HH:mm:ss', tz).toString()
 
     if(timer) {
     		log.debug "Departure time set to: $timer"
-    		sendEvent("name":"image", "value":schedTime)
-            sendEvent("name":"departure", "value":time)
+    		sendEvent("name":"departure_time", "value":schedTime)
+            sendEvent("name":"dep_time_formatted", "value":time)
     } else {
     		log.debug "No departure time is set"
     		}
