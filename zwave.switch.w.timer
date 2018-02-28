@@ -1,6 +1,5 @@
 /**
- * This is copied directly from the Z-wave switch with power metering from SmartThings, i added a Image Capture
- * capability just to be able to send a string to webcore, the string is the departure time which represent
+ * This is copied directly from the Z-wave switch with power metering from SmartThings, i added an attribute which represent
  * when you are leaving your home so the switch turns on a couple of hours before if you have plugged in
  * your engine heater cable. All rules are set in webcore though. This just provides an easy way of setting
  * a departure time.
@@ -18,8 +17,9 @@ metadata {
 		capability "Light"
 		capability "Health Check"
        
-        	attribute "dep_time_formatted", "string"
-        	attribute "departure_time", "string"
+        attribute "dep_time_formatted", "string"
+        attribute "departure_time", "string"
+        attribute "timer_activate", "number"
 
 		command "reset"
 
@@ -29,6 +29,7 @@ metadata {
     
     preferences {
     input name: "timer", type: "time", title: "Tid för avresa:", description: "Ange tid", required: false
+    input name: "activate", type: "bool", title: "Aktivera tidsstyrning:", required: false
 	}
 
 	// simulator metadata
@@ -52,19 +53,19 @@ metadata {
 	}
 
 	// tile definitions
-	tiles {
-		standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true, decoration: "flat") {
+	tiles(scale: 2) {
+		standardTile("switch", "device.switch", width: 4, height: 4, canChangeIcon: true, decoration: "flat") {
 			state "on", label: '${name}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#00A0DC"
 			state "off", label: '${name}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
 		}
-		valueTile("power", "device.power") {
+        valueTile("dep_time_formatted", "device.dep_time_formatted", width: 2, height: 2, decoration: "flat") {
+			state "default", label:'${currentValue}', backgroundColor: "#00A0DC"
+		}
+		valueTile("power", "device.power", width: 2, height: 2) {
 			state "default", label:'${currentValue} W'
 		}
 		valueTile("energy", "device.energy") {
 			state "default", label:'${currentValue} kWh'
-		}
-        valueTile("dep_time_formatted", "device.dep_time_formatted") {
-			state "default", label:'Avresa: ${currentValue}'
 		}
 		standardTile("reset", "device.energy", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'reset kWh', action:"reset"
@@ -73,8 +74,8 @@ metadata {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
 
-		main(["switch","power","energy","dep_time_formatted"])
-		details(["switch","power","energy","dep_time_formatted","refresh","reset"])
+		main(["switch", "dep_time_formatted"])
+		details(["switch","dep_time_formatted","power","energy","refresh","reset"])
 	}
 }
 
@@ -100,12 +101,23 @@ def updated() {
        // def time = schedTime.format('yyyy-MM-dd HH:mm:ss', tz).toString()
 
     if(timer) {
-    		log.debug "Departure time set to: $timer"
+    		log.debug "Departure time set to: $time"
     		sendEvent("name":"departure_time", "value":schedTime)
             sendEvent("name":"dep_time_formatted", "value":time)
     } else {
     		log.debug "No departure time is set"
     		}
+            
+
+    if (activate == true) {
+			sendEvent("name":"timer_activate", "value":1)
+			log.debug "Timer activation is on"
+	} else if (activate == false) {
+			sendEvent("name":"timer_activate", "value":0)
+			log.debug "Timer activation is off"
+	} else {
+			log.debug "No state for timer activation is set"
+			}
 }
 
 def getCommandClassVersions() {
@@ -218,6 +230,14 @@ def off() {
 	]
 }
 
+/*def timerOn() {
+	sendEvent("name":"timer_activate", "value":1)
+}
+
+def timerOff() {
+	sendEvent("name":"timer_activate", "value":0)
+}
+*/
 def poll() {
 	delayBetween([
 		zwave.switchBinaryV1.switchBinaryGet().format(),
